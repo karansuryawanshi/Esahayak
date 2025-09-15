@@ -71,8 +71,11 @@ export async function loginDemoUser(email: string, name?: string) {
 export async function getCurrentUserFromCookies() {
   const cookieStore = await cookies();
   const cookie = cookieStore.get(COOKIE_NAME);
-  console.log("cookie Executed", cookie);
-  if (!cookie) return null;
+  // console.log("cookie Executed", cookie);
+  if (!cookie) {
+    alert("Login required")
+    return null
+  };
 
   try {
     return JSON.parse(cookie.value) as { id: string; email: string };

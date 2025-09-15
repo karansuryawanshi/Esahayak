@@ -13,6 +13,7 @@ function toCsvRow(fields: string[]) {
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const q = url.searchParams.get("q");
+  // const where: any = {};
   const where: Prisma.BuyerWhereInput = {};
 
   if (q) {

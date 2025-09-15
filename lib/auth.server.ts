@@ -16,7 +16,10 @@ export async function getCurrentUserFromCookies() {
   const cookieStore = await cookies(); // ✅ no await needed
   const cookie = cookieStore.get(COOKIE_NAME);
 
-  if (!cookie) return null;
+  if (!cookie) {
+    alert("Login required")  
+    return null
+  };
 
   try {
     return JSON.parse(cookie.value) as { id: string; email: string };

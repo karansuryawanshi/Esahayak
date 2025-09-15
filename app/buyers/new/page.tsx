@@ -22,7 +22,7 @@ export default function NewBuyerPage() {
     });
 
     if (!res.ok) {
-      let errorMessage = "Could not create";
+      let errorMessage = "Login Required";
 
       try {
         const json = await res.json();
