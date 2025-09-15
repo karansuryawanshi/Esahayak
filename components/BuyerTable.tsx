@@ -1,12 +1,12 @@
 // src/components/BuyerTable.tsx
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
+// CHANGE 1: Import `useMemo` instead of `useCallback`
+import React, { useState, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import debounce from "lodash.debounce";
 import { Button } from "@/components/ui/button";
 import { Input } from "./ui/input";
-// import Link from "next/link";
 import {
   Table,
   TableBody,
@@ -32,20 +32,28 @@ export default function BuyerTable({
   const searchParams = useSearchParams();
   const [q, setQ] = useState(searchParams.get("q") || "");
 
-  const debouncedUpdate = useCallback(
-    debounce((val: string) => {
-      const params = new URLSearchParams(Array.from(searchParams.entries()));
-      if (val) params.set("q", val);
-      else params.delete("q");
-      params.set("page", "1");
-      router.push(`/buyers?${params.toString()}`);
-    }, 500),
+  // CHANGE 2: Use `useMemo` to memoize the debounced function itself.
+  // This ensures the same function instance is used across re-renders,
+  // allowing the debounce timer to work correctly.
+  const debouncedUpdate = useMemo(
+    () =>
+      debounce((val: string) => {
+        const params = new URLSearchParams(Array.from(searchParams.entries()));
+        if (val) {
+          params.set("q", val);
+        } else {
+          params.delete("q");
+        }
+        params.set("page", "1");
+        router.push(`/buyers?${params.toString()}`);
+      }, 500),
     [router, searchParams]
   );
 
-  // debounced update
+  // This useEffect now correctly uses the memoized debounced function
   useEffect(() => {
     debouncedUpdate(q);
+    // Cleanup function to cancel the debounce on component unmount or if q changes
     return () => debouncedUpdate.cancel();
   }, [q, debouncedUpdate]);
 
@@ -59,11 +67,8 @@ export default function BuyerTable({
           placeholder="Search name, phone, email..."
           className="p-2 border rounded flex-1"
         />
-        <Button>
-          <Link
-            href={`/api/buyers/export?${searchParams.toString()}`}
-            // className="px-3 py-2 rounded bg-[#3282b8] text-white"
-          >
+        <Button asChild>
+          <Link href={`/api/buyers/export?${searchParams.toString()}`}>
             Export CSV
           </Link>
         </Button>
@@ -98,13 +103,16 @@ export default function BuyerTable({
                 <TableCell>
                   {row.budgetMin ?? "-"} - {row.budgetMax ?? "-"}
                 </TableCell>
-                {row.timeline === "ZERO_3M" && <TableCell>0-3m</TableCell>}
-                {row.timeline === "THREE_6M" && <TableCell>3-6m</TableCell>}
-                {row.timeline === "GT_6M" && <TableCell>&gt; 6m</TableCell>}
-                {row.timeline === "Exploring" && (
-                  <TableCell>Exploring</TableCell>
-                )}
-
+                <TableCell>
+                  {
+                    {
+                      ZERO_3M: "0-3m",
+                      THREE_6M: "3-6m",
+                      GT_6M: "> 6m",
+                      Exploring: "Exploring",
+                    }[row.timeline]
+                  }
+                </TableCell>
                 <TableCell>{row.status}</TableCell>
                 <TableCell suppressHydrationWarning>
                   {new Date(row.updatedAt)

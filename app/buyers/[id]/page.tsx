@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserFromCookies } from "@/lib/auth.server"; // server-only
 import BuyerEditor from "./BuyerEditor"; // client component
-import { Buyer, BuyerHistory } from "@prisma/client";
+import { BuyerHistory } from "@prisma/client";
 
 export default async function BuyerView({
   params,
@@ -32,7 +32,11 @@ export default async function BuyerView({
       <div>
         <BuyerEditor
           initial={{
-            ...buyer,
+            fullName: buyer.fullName,
+            phone: buyer.phone,
+            city: buyer.city,
+            propertyType: buyer.propertyType,
+            purpose: buyer.purpose,
             bhk:
               buyer.bhk === "ONE"
                 ? "1"
@@ -54,6 +58,11 @@ export default async function BuyerView({
                 ? ">6m"
                 : "Exploring",
             source: buyer.source === "WalkIn" ? "Walk-in" : buyer.source,
+            email: buyer.email ?? undefined,
+            notes: buyer.notes ?? undefined,
+            budgetMin: buyer.budgetMin ?? undefined,
+            budgetMax: buyer.budgetMax ?? undefined,
+            tags: buyer.tags ?? [],
           }}
           id={id}
           isOwner={isOwner}

@@ -2,7 +2,8 @@
 import { prisma } from "@/lib/prisma";
 import BuyerTable from "@/components/BuyerTable";
 import CSVImporter from "@/components/CSVImporter";
-import { Prisma } from "@prisma/client";
+// CHANGE 1: Import the necessary Enum types from Prisma Client
+import { Prisma, City, PropertyType, Status, Timeline } from "@prisma/client";
 
 export default async function BuyersPage({
   searchParams = {},
@@ -35,10 +36,13 @@ export default async function BuyersPage({
     : searchParams?.q;
 
   const where: Prisma.BuyerWhereInput = {};
-  if (city) where.city = city as any;
-  if (propertyType) where.propertyType = propertyType as any;
-  if (status) where.status = status as any;
-  if (timeline) where.timeline = timeline as any;
+
+  // CHANGE 2: Replace `as any` with specific Enum type assertions for type safety
+  if (city) where.city = city as City;
+  if (propertyType) where.propertyType = propertyType as PropertyType;
+  if (status) where.status = status as Status;
+  if (timeline) where.timeline = timeline as Timeline;
+
   if (q) {
     where.OR = [
       { fullName: { contains: q, mode: "insensitive" } },
