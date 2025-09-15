@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { bhkDbToUi, timelineDbToUi, sourceDbToUi } from "@/utils/mappers";
 
 function toCsvRow(fields: string[]) {
@@ -12,7 +13,9 @@ function toCsvRow(fields: string[]) {
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const q = url.searchParams.get("q");
-  const where: any = {};
+  // const where: any = {};
+  const where: Prisma.BuyerWhereInput = {};
+
   if (q) {
     where.OR = [
       { fullName: { contains: q, mode: "insensitive" } },
@@ -46,19 +49,19 @@ export async function GET(request: Request) {
 
   const csv = [toCsvRow(headers)]
     .concat(
-      items.map((it: any) =>
+      items.map((it) =>
         toCsvRow([
           it.fullName,
-          it.email,
+          it.email ?? "",
           it.phone,
           it.city,
           it.propertyType,
-          bhkDbToUi(it.bhk),             // 👈 map back
+          bhkDbToUi(it.bhk),           
           it.purpose,
-          it.budgetMin ?? "",
-          it.budgetMax ?? "",
-          timelineDbToUi(it.timeline),   // 👈 map back
-          sourceDbToUi(it.source),       // 👈 map back
+          it.budgetMin != null ? it.budgetMin.toString() : "",
+          it.budgetMax != null ? it.budgetMax.toString() : "",
+          timelineDbToUi(it.timeline),   
+          sourceDbToUi(it.source),       
           it.notes ?? "",
           (it.tags || []).join(","),
           it.status,

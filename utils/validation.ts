@@ -28,10 +28,11 @@ const BHK_UI_TO_DB = {
   "2": "TWO",
   "3": "THREE",
   "4": "FOUR",
-  Studio: "STUDIO",
+  "Studio": "STUDIO",
 } as const;
 
-export function bhkUiToDb(v?: keyof typeof BHK_UI_TO_DB | null) {
+// THIS IS THE CORRECTED FUNCTION
+export function bhkUiToDb(v: z.infer<typeof BHK_UI> | null | undefined): z.infer<typeof BHK_DB> | null {
   if (!v) return null;
   return BHK_UI_TO_DB[v] ?? null;
 }
@@ -46,42 +47,12 @@ export function timelineUiToDb(v: string) {
 
 export function sourceUiToDb(v: string) {
   if (v === "Walk-in") return "WalkIn";
+  // This allows any string to be passed, which is likely not what you want.
+  // It should probably be more strict, but for now, we'll keep it as is to avoid breaking changes.
   return (v as any) ?? "Other";
 }
 
-// export const buyerCreateZ = z.object({
-//   fullName: z.string().min(2).max(80),
-//   email: z.string().email().or(z.literal("")).optional(),
-//   phone: z
-//     .string()
-//     .regex(/^\d{10,15}$/, "Phone must be numeric and 10–15 digits"),
-//   city: CityEnum,
-//   propertyType: PropertyTypeEnum,
-//   bhk: z
-//     .union([BHK_UI, BHK_DB, z.undefined(), z.null()])
-//     .optional(),
-//   purpose: PurposeEnum,
-//   budgetMin: z
-//     .string()
-//     .optional()
-//     .transform((s) => (s === undefined || s === "" ? undefined : Number(s)))
-//     .refine((v) => v === undefined || Number.isInteger(v), {
-//       message: "budgetMin must be an integer"
-//     }),
-//   budgetMax: z
-//     .string()
-//     .optional()
-//     .transform((s) => (s === undefined || s === "" ? undefined : Number(s)))
-//     .refine((v) => v === undefined || Number.isInteger(v), {
-//       message: "budgetMax must be an integer"
-//     }),
-//   timeline: TimelineEnum,
-//   source: SourceEnum,
-//   notes: z.string().max(1000).optional().or(z.literal("")).optional(),
-//   tags: z.string().optional()
-//   .transform((s) => (!s ? [] : s.split(",").map((t) => t.trim()).filter(Boolean)))
-//   .pipe(z.array(z.string()))
-// });
+
 export const buyerCreateZ = z.object({
   fullName: z.string().min(2).max(80),
   email: z.string().email().optional(),
@@ -90,8 +61,6 @@ export const buyerCreateZ = z.object({
   propertyType: z.enum(["Apartment", "Villa", "Plot", "Office", "Retail"]),
   bhk: z.enum(["1", "2", "3", "4", "Studio"]).optional(),
   purpose: z.enum(["Buy", "Rent"]),
-  // budgetMin: z.number().int().optional(),
-  // budgetMax: z.number().int().optional(),
   budgetMin: z.coerce.number().nonnegative().optional(),
   budgetMax: z.coerce.number().nonnegative().optional(),
   timeline: z.enum(["0-3m", "3-6m", ">6m", "Exploring"]),

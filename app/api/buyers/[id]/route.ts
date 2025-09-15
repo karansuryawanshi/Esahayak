@@ -112,12 +112,12 @@
 
 //   return NextResponse.json({ ok: true });
 // }
-
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserFromCookies } from "@/lib/auth";
 import { buyerCreateValidated, bhkUiToDb, timelineUiToDb, sourceUiToDb } from "@/utils/validation";
 import { isRateLimited } from "@/utils/rateLimit";
+import { Prisma } from "@prisma/client";
 
 export async function GET(
   request: NextRequest,
@@ -162,25 +162,25 @@ export async function PATCH(
     return NextResponse.json({ error: "Record changed, please refresh" }, { status: 409 });
   }
 
-  const bhkDb = data.bhk ? bhkUiToDb(data.bhk as any) : null;
-  const timelineDb = timelineUiToDb(data.timeline as any);
-  const sourceDb = sourceUiToDb(data.source as any);
+  const bhkDb = data.bhk ? bhkUiToDb(data.bhk) : null;
+  const timelineDb = timelineUiToDb(data.timeline);
+  const sourceDb = sourceUiToDb(data.source);
 
-  const updated = await prisma.$transaction(async (tx) => {
+  const updated = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const after = await tx.buyer.update({
       where: { id },
       data: {
         fullName: data.fullName,
         email: data.email || null,
         phone: data.phone,
-        city: data.city as any,
-        propertyType: data.propertyType as any,
-        bhk: bhkDb as any,
-        purpose: data.purpose as any,
-        budgetMin: data.budgetMin as any,
-        budgetMax: data.budgetMax as any,
-        timeline: timelineDb as any,
-        source: sourceDb as any,
+        city: data.city,
+        propertyType: data.propertyType,
+        bhk: bhkDb,
+        purpose: data.purpose,
+        budgetMin: data.budgetMin,
+        budgetMax: data.budgetMax,
+        timeline: timelineDb,
+        source: sourceDb,
         notes: data.notes || null,
         tags: (data.tags as string[]) || []
       }

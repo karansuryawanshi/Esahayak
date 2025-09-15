@@ -2,6 +2,7 @@
 import { prisma } from "@/lib/prisma";
 import BuyerTable from "@/components/BuyerTable";
 import CSVImporter from "@/components/CSVImporter";
+import { Prisma } from "@prisma/client";
 
 export default async function BuyersPage({
   searchParams = {},
@@ -33,11 +34,11 @@ export default async function BuyersPage({
     ? searchParams.q[0]
     : searchParams?.q;
 
-  const where: any = {};
-  if (city) where.city = city;
-  if (propertyType) where.propertyType = propertyType;
-  if (status) where.status = status;
-  if (timeline) where.timeline = timeline;
+  const where: Prisma.BuyerWhereInput = {};
+  if (city) where.city = city as any;
+  if (propertyType) where.propertyType = propertyType as any;
+  if (status) where.status = status as any;
+  if (timeline) where.timeline = timeline as any;
   if (q) {
     where.OR = [
       { fullName: { contains: q, mode: "insensitive" } },

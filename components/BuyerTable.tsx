@@ -1,6 +1,6 @@
 // src/components/BuyerTable.tsx
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import debounce from "lodash.debounce";
@@ -15,24 +15,39 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Buyer } from "@prisma/client";
 
-export default function BuyerTable({ items, total, page, pageSize }: any) {
+export default function BuyerTable({
+  items,
+  total,
+  page,
+  pageSize,
+}: {
+  items: Buyer[];
+  total: number;
+  page: number;
+  pageSize: number;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [q, setQ] = useState(searchParams.get("q") || "");
 
-  // debounced update
-  useEffect(() => {
-    const d = debounce((val: string) => {
+  const debouncedUpdate = useCallback(
+    debounce((val: string) => {
       const params = new URLSearchParams(Array.from(searchParams.entries()));
       if (val) params.set("q", val);
       else params.delete("q");
       params.set("page", "1");
       router.push(`/buyers?${params.toString()}`);
-    }, 500);
-    d(q);
-    return () => d.cancel();
-  }, [q]);
+    }, 500),
+    [router, searchParams]
+  );
+
+  // debounced update
+  useEffect(() => {
+    debouncedUpdate(q);
+    return () => debouncedUpdate.cancel();
+  }, [q, debouncedUpdate]);
 
   return (
     <div>
@@ -74,7 +89,7 @@ export default function BuyerTable({ items, total, page, pageSize }: any) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {items.map((row: any) => (
+            {items.map((row: Buyer) => (
               <TableRow key={row.id}>
                 <TableCell className="font-medium">{row.fullName}</TableCell>
                 <TableCell>{row.phone}</TableCell>

@@ -3,6 +3,12 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserFromCookies } from "@/lib/auth";
 import { buyerCreateValidated, bhkUiToDb, timelineUiToDb, sourceUiToDb } from "@/utils/validation";
+import { Buyer } from "@prisma/client";
+
+interface RowError {
+  row: number;
+  errors: any;
+}
 
 export async function POST(request: Request) {
   const user = await getCurrentUserFromCookies();
@@ -15,8 +21,8 @@ export async function POST(request: Request) {
   if (rows.length > 200) return NextResponse.json({ error: "Max 200 rows allowed" }, { status: 400 });
 
   // Server-side validate each row, build array of valid entries
-  const valid: any[] = [];
-  const errors: Array<{ row: number; errors: any }> = [];
+  const valid: Omit<Buyer, "id" | "createdAt" | "updatedAt">[] = [];
+  const errors: RowError[] = [];
 
   rows.forEach((r, i) => {
     const parsed = buyerCreateValidated.safeParse(r);
@@ -26,10 +32,13 @@ export async function POST(request: Request) {
       // map enums
       valid.push({
         ...parsed.data,
-        bhk: parsed.data.bhk ? bhkUiToDb(parsed.data.bhk as any) : null,
-        timeline: timelineUiToDb(parsed.data.timeline as any),
-        source: sourceUiToDb(parsed.data.source as any),
-        ownerId: user.id
+        bhk: parsed.data.bhk ? bhkUiToDb(parsed.data.bhk) : null,
+        timeline: timelineUiToDb(parsed.data.timeline),
+        source: sourceUiToDb(parsed.data.source),
+        ownerId: user.id,
+        email: parsed.data.email || null,
+        notes: parsed.data.notes || null,
+        tags: parsed.data.tags || [],
       });
     }
   });
@@ -42,31 +51,16 @@ export async function POST(request: Request) {
   const created = await prisma.$transaction(
     valid.map((v) =>
       prisma.buyer.create({
-        data: {
-          fullName: v.fullName,
-          email: v.email || null,
-          phone: v.phone,
-          city: v.city,
-          propertyType: v.propertyType,
-          bhk: v.bhk as any,
-          purpose: v.purpose,
-          budgetMin: v.budgetMin,
-          budgetMax: v.budgetMax,
-          timeline: v.timeline as any,
-          source: v.source as any,
-          notes: v.notes || null,
-          tags: v.tags || [],
-          ownerId: v.ownerId
-        }
+        data: v,
       })
     )
   );
 
   // create histories
   await prisma.$transaction(
-    created.map((c:any) =>
+    created.map((c: Buyer) =>
       prisma.buyerHistory.create({
-        data: { buyerId: c.id, changedBy: user.email, diff: { op: "import_create", after: c } }
+        data: { buyerId: c.id, changedBy: user.email, diff: { op: "import_create", after: c } },
       })
     )
   );

@@ -2,6 +2,10 @@
 
 import React from "react";
 import BuyerForm from "@/components/BuyerForm";
+import { buyerCreateZ } from "@/utils/validation";
+import { z } from "zod";
+
+type FormValues = z.infer<typeof buyerCreateZ>;
 
 export default function BuyerEditor({
   initial,
@@ -9,7 +13,7 @@ export default function BuyerEditor({
   isOwner,
   updatedAt,
 }: {
-  initial: any;
+  initial: FormValues;
   id: string;
   isOwner: boolean;
   updatedAt: string;
@@ -22,7 +26,7 @@ export default function BuyerEditor({
     );
   }
 
-  async function onSubmit(values: any) {
+  async function onSubmit(values: FormValues) {
     const payload = { ...values, updatedAt };
     const res = await fetch(`/api/buyers/${id}`, {
       method: "PATCH",

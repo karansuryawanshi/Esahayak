@@ -45,7 +45,7 @@ export default function BuyerForm({
 
   return (
     <form
-      onSubmit={handleSubmit((data: any) => {
+      onSubmit={handleSubmit((data: FormValues) => {
         console.log("handleSubmit called", data);
         onSubmit(data);
       })}

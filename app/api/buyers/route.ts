@@ -1,9 +1,10 @@
 // src/app/api/buyers/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUserFromCookies, loginDemoUser } from "@/lib/auth";
-import { buyerCreateValidated, buyerCreateZ, bhkUiToDb, timelineUiToDb, sourceUiToDb } from "@/utils/validation";
+import { getCurrentUserFromCookies } from "@/lib/auth";
+import { buyerCreateValidated, bhkUiToDb, timelineUiToDb, sourceUiToDb } from "@/utils/validation";
 import { isRateLimited } from "@/utils/rateLimit";
+import { Prisma } from "@prisma/client";
 // import { notFound } from "next/navigation";
 
 export async function GET(request: Request) {
@@ -20,13 +21,13 @@ export async function GET(request: Request) {
   const sort = url.searchParams.get("sort") || "updatedAt";
   const order = url.searchParams.get("order") || "desc";
 
-  const where: any = {};
-  if (city) where.city = city;
-  if (propertyType) where.propertyType = propertyType;
-  if (status) where.status = status;
+  const where: Prisma.BuyerWhereInput = {};
+  if (city) where.city = city as any;
+  if (propertyType) where.propertyType = propertyType as any;
+  if (status) where.status = status as any;
   if (timeline) {
     // timeline may be UI value like "0-3m"
-    where.timeline = timeline;
+    where.timeline = timeline as any;
   }
   if (q) {
     where.OR = [
@@ -59,12 +60,12 @@ export async function POST(request: Request) {
 
   // Rate limit: by user or IP
   const userCookie = await getCurrentUserFromCookies();
-  console.log("userCookie",userCookie)
+  console.log("userCookie", userCookie)
 
   if (!userCookie) {
     console.log("user cookie not notFound")
-  return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-}
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
 
   const rateKey = userCookie?.id ?? (request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "anon");
   if (isRateLimited(rateKey)) {
@@ -88,7 +89,7 @@ export async function POST(request: Request) {
   const timelineDb = timelineUiToDb(data.timeline as any);
   const sourceDb = sourceUiToDb(data.source as any);
 
-  const created = await prisma.$transaction(async (tx:any) => {
+  const created = await prisma.$transaction(async (tx) => {
     const buyer = await tx.buyer.create({
       data: {
         fullName: data.fullName,
@@ -105,8 +106,8 @@ export async function POST(request: Request) {
         notes: data.notes || null,
         tags: (data.tags as string[]) || [],
         owner: {
-      connect: { id: userCookie.id }, // ✅ connect the user relation
-    },
+          connect: { id: userCookie.id }, // ✅ connect the user relation
+        },
 
       }
     });

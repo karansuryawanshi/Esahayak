@@ -1,8 +1,12 @@
 // src/components/CSVImporter.tsx
 "use client";
 import React, { useState } from "react";
-import Papa from "papaparse";
+import Papa, { ParseResult } from "papaparse";
 import { buyerCreateValidated } from "@/utils/validation";
+
+interface RowData {
+  [key: string]: any;
+}
 
 export default function CSVImporter() {
   const [errors, setErrors] = useState<any[]>([]);
@@ -14,8 +18,8 @@ export default function CSVImporter() {
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
-      complete: (results: any) => {
-        const rows = results.data as any[];
+      complete: (results: ParseResult<RowData>) => {
+        const rows = results.data;
         const rowErrors: any[] = [];
         const valids: any[] = [];
 

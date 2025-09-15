@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserFromCookies } from "@/lib/auth.server"; // server-only
 import BuyerEditor from "./BuyerEditor"; // client component
+import { Buyer, BuyerHistory } from "@prisma/client";
 
 export default async function BuyerView({
   params,
@@ -63,7 +64,7 @@ export default async function BuyerView({
       <div className="mt-6">
         <h3>Recent changes</h3>
         <ul>
-          {buyer.history.map((h: any) => (
+          {buyer.history.map((h: BuyerHistory) => (
             <li key={h.id}>
               <div>
                 {new Date(h.changedAt).toLocaleString()} by {h.changedBy}
