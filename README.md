@@ -1,36 +1,183 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# E-Sahayak – Buyer Lead Intake App
 
-## Getting Started
+A mini **Buyer Lead Intake** application to **capture, list, and manage buyer leads** efficiently. Built with Next.js, TypeScript, and a robust backend, this app supports validation, search/filtering, CSV import/export, and change history tracking.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Features
+
+- **Create Leads:** Capture all relevant buyer information with conditional fields and server/client validation.
+- **List & Search:** Paginated SSR listing with filters (`city`, `propertyType`, `status`, `timeline`) and debounced search by `fullName`, `phone`, or `email`.
+- **View & Edit Leads:** Edit leads with concurrency control and view last 5 history changes.
+- **CSV Import/Export:** Bulk import leads with row-level validation and export filtered results.
+- **Ownership & Auth:** Users can edit/delete only their own leads; all logged-in users can view leads.
+
+**Nice-to-haves implemented:** Tag chips with typeahead, status quick-actions, and optional attachment upload support.
+
+---
+
+## Tech Stack
+
+- **Frontend:** Next.js (App Router), TypeScript, React, Tailwind CSS
+- **Backend:** Prisma + Postgres/SQLite/Supabase
+- **Validation:** Zod (client + server)
+- **Auth:** Magic link or demo login
+- **Version Control:** Git (with meaningful commits)
+
+---
+
+## Data Model
+
+### buyers
+
+| Field        | Type      | Notes                                                                              |
+| ------------ | --------- | ---------------------------------------------------------------------------------- |
+| id           | uuid      | Primary Key                                                                        |
+| fullName     | string    | 2–80 chars                                                                         |
+| email        | string    | optional, must be valid                                                            |
+| phone        | string    | required, 10–15 digits                                                             |
+| city         | enum      | Chandigarh, Mohali, Zirakpur, Panchkula, Other                                     |
+| propertyType | enum      | Apartment, Villa, Plot, Office, Retail                                             |
+| bhk          | enum      | Conditional: 1,2,3,4,Studio (only Apartment/Villa)                                 |
+| purpose      | enum      | Buy, Rent                                                                          |
+| budgetMin    | int       | optional                                                                           |
+| budgetMax    | int       | optional, ≥ budgetMin                                                              |
+| timeline     | enum      | 0-3m, 3-6m, >6m, Exploring                                                         |
+| source       | enum      | Website, Referral, Walk-in, Call, Other                                            |
+| status       | enum      | New, Qualified, Contacted, Visited, Negotiation, Converted, Dropped (default: New) |
+| notes        | text      | optional, ≤ 1000 chars                                                             |
+| tags         | string[]  | optional                                                                           |
+| ownerId      | uuid      | Lead owner                                                                         |
+| updatedAt    | timestamp | Auto-updated                                                                       |
+
+### buyer_history
+
+| Field     | Type      | Notes                 |
+| --------- | --------- | --------------------- |
+| id        | uuid      | Primary Key           |
+| buyerId   | uuid      | Foreign Key to buyers |
+| changedBy | uuid      | User who changed      |
+| changedAt | timestamp | Timestamp of change   |
+| diff      | JSON      | Stores changed fields |
+
+---
+
+## Pages & Flows
+
+### `/buyers/new` – Create Lead
+
+- Form fields: `fullName, email, phone, city, propertyType, bhk, purpose, budgetMin, budgetMax, timeline, source, notes, tags[]`
+- Validation: fullName ≥ 2 chars, phone numeric 10–15 digits, email valid if provided, budgetMax ≥ budgetMin, bhk required for Apartment/Villa
+- On submit: create lead, assign `ownerId`, add entry to `buyer_history`
+
+### `/buyers` – List & Search
+
+- SSR paginated (10/page)
+- URL-synced filters: `city`, `propertyType`, `status`, `timeline`
+- Debounced search: `fullName | phone | email`
+- Sort: `updatedAt` descending
+- Row actions: View / Edit
+
+### `/buyers/[id]` – View & Edit
+
+- Full edit with validation
+- Concurrency check using `updatedAt`
+- Last 5 changes from `buyer_history` displayed
+
+### CSV Import / Export
+
+- Import max 200 rows, validate each row, transactional insert
+- Export current filtered list
+- Unknown enums or invalid rows are rejected
+
+---
+
+## Ownership & Auth
+
+- All logged-in users can read leads
+- Users can edit/delete only their own leads
+- Admin role optional: can edit all
+
+---
+
+## Quality Measures
+
+- Unit test for CSV row/budget validation
+- Rate limit on create/update (per user/IP)
+- Error boundaries + empty states
+- Accessibility: labels, keyboard focus, form errors announced
+
+---
+
+## Setup & Run Locally
+
+1. **Clone repo**
+
+```
+git clone https://github.com/<your-username>/e-sahayak.git
+cd e-sahayak
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. **Install dependencies**
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+npm install
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3. Environment variables
+   Create .env file:
 
-## Learn More
+```
+DATABASE_URL=<your_database_url>
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
 
-To learn more about Next.js, take a look at the following resources:
+4. **Database migrations & seed (if any)**
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+npx prisma migrate dev --name init
+npx prisma db seed
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+5. Run locally
 
-## Deploy on Vercel
+```
+npm run dev
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+6. Build for production
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+npm run build
+npm run start
+```
+
+## Design Notes
+
+- Validation: Zod schema used both on client and server
+
+- SSR vs Client: List page uses SSR for real pagination; form inputs validated client-side for UX
+
+- Ownership Enforcement: Server checks ownerId before update/delete
+
+- CSV Import: Row-level errors displayed; transactional insertion prevents partial data
+
+## Done vs Skipped
+
+Done:
+
+- Full CRUD with validation and history
+
+- SSR pagination & filters
+
+- CSV import/export with validation
+
+- Ownership enforcement & auth
+
+- Accessibility basics
+
+### Skipped/Optional:
+
+- Admin role (optional)
+- Optimistic UI edit/rollback
+- File attachment (optional)

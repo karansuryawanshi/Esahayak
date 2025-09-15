@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserFromCookies } from "@/lib/auth";
 import { buyerCreateValidated, bhkUiToDb, timelineUiToDb, sourceUiToDb } from "@/utils/validation";
-import { Buyer } from "@prisma/client";
+import { Buyer, Status } from "@prisma/client";
 
 interface RowError {
   row: number;
@@ -39,6 +39,7 @@ export async function POST(request: Request) {
         email: parsed.data.email || null,
         notes: parsed.data.notes || null,
         tags: parsed.data.tags || [],
+        status: 'New' as Status,
       });
     }
   });
